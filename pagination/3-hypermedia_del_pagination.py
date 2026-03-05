@@ -1,26 +1,36 @@
 #!/usr/bin/env python3
 """
-Deletion-resilient hypermedia pagination
+Deletion-resilient hypermedia pagination module.
+This module provides a Server class to paginate a database of popular
+baby names even when rows are deleted between requests.
 """
 
 import csv
-from typing import Dict, List, Optional
+from typing import List, Dict, Optional
 
 
 class Server:
-    """Server class to paginate a database of popular baby names.
+    """
+    Server class to paginate a database of popular baby names.
+    The goal is to provide a deletion-resilient pagination mechanism.
     """
     DATA_FILE = "Popular_Baby_Names.csv"
 
-    def __init__(self) -> None:
+    def __init__(self):
+        """
+        Initializes the Server instance with private dataset attributes.
+        """
         self.__dataset = None
         self.__indexed_dataset = None
 
     def dataset(self) -> List[List]:
-        """Cached dataset
+        """
+        Reads and caches the dataset from the CSV file.
+        Returns:
+            List[List]: The dataset excluding the header.
         """
         if self.__dataset is None:
-            with open(self.DATA_FILE, newline="") as f:
+            with open(self.DATA_FILE) as f:
                 reader = csv.reader(f)
                 dataset = [row for row in reader]
             self.__dataset = dataset[1:]
@@ -28,53 +38,48 @@ class Server:
         return self.__dataset
 
     def indexed_dataset(self) -> Dict[int, List]:
-        """Dataset indexed by sorting position, starting at 0
+        """
+        Indexes the dataset by their original position, starting from 0.
+        Returns:
+            Dict[int, List]: A dictionary mapping index to row data.
         """
         if self.__indexed_dataset is None:
             dataset = self.dataset()
-            truncated_dataset = dataset[:1000]
             self.__indexed_dataset = {
                 i: dataset[i] for i in range(len(dataset))
             }
         return self.__indexed_dataset
 
-    def get_hyper_index(self, index: Optional[int] = None,
-                        page_size: int = 10) -> Dict:
-        """Return a deletion-resilient page of the dataset.
-
-        Args:
-            index (Optional[int]): start index for the page (default 0)
-            page_size (int): number of items to return
-
-        Returns:
-            Dict: {
-                "index": start index used,
-                "next_index": next index to query,
-                "page_size": current page size,
-                "data": list of rows
-            }
+    def get_hyper_index(
+        self, index: Optional[int] = None, page_size: int = 10
+    ) -> Dict:
         """
-        if index is None:
-            index = 0
-
-        assert isinstance(index, int) and index >= 0
-        assert isinstance(page_size, int) and page_size > 0
-
-        indexed = self.indexed_dataset()
-        assert index < len(self.dataset())
+        Provides deletion-resilient pagination data.
+        Args:
+            index: The starting index for the current page.
+            page_size: The number of items to include in the page.
+        Returns:
+            A dictionary containing the index, next_index, page_size, and data.
+        """
+    
+        indexed_data = self.indexed_dataset()
+        assert index is not None and 0 <= index < len(indexed_data)
 
         data: List[List] = []
-        current = index
+        current_index: int = index
+        data_count: int = 0
 
-        # Collect page_size existing rows, skipping deleted indexes
-        while len(data) < page_size and current < len(self.dataset()):
-            if current in indexed:
-                data.append(indexed[current])
-            current += 1
+    
+        while data_count < page_size and current_index < len(indexed_data):
+            item = indexed_data.get(current_index)
+            if item:
+                data.append(item)
+                data_count += 1
+            current_index += 1
 
         return {
-            "index": index,
-            "next_index": current,
-            "page_size": page_size,
-            "data": data,
+            'index': index,
+            'next_index': current_index,
+            'page_size': len(data),
+            'data': data
         }
