@@ -1,2 +1,2 @@
-#!/usr/bin/env mongo
+// show all databases
 show dbs
