@@ -10,4 +10,3 @@ export default function getFullResponseFromAPI(success) {
     }
   });
 }
-2. Catch m
