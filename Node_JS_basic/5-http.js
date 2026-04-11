@@ -31,7 +31,6 @@ const countStudents = (path) => new Promise((resolve, reject) => {
       }
     }
 
-    // ترتيب الحقول يفضل أن يكون ثابتاً (اختياري لكن يساعد في الاختبارات)
     const sortedFields = Object.keys(fields).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
     for (const field of sortedFields) {
@@ -54,7 +53,6 @@ const app = http.createServer((req, res) => {
         res.end(`${responseHeader}${data}`);
       })
       .catch((err) => {
-        // تأكد من أن رسالة الخطأ تظهر تماماً كما هي مطلوبة بعد الهيدر
         res.end(`${responseHeader}${err.message}`);
       });
   }
