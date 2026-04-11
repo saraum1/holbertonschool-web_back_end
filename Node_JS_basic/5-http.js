@@ -31,8 +31,11 @@ const countStudents = (path) => new Promise((resolve, reject) => {
       }
     }
 
-    for (const [field, names] of Object.entries(fields)) {
-      output += `\nNumber of students in ${field}: ${names.length}. List: ${names.join(', ')}`;
+    // ترتيب الحقول يفضل أن يكون ثابتاً (اختياري لكن يساعد في الاختبارات)
+    const sortedFields = Object.keys(fields).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    for (const field of sortedFields) {
+      output += `\nNumber of students in ${field}: ${fields[field].length}. List: ${fields[field].join(', ')}`;
     }
     resolve(output);
   });
@@ -45,17 +48,15 @@ const app = http.createServer((req, res) => {
   if (req.url === '/') {
     res.end('Hello Holberton School!');
   } else if (req.url === '/students') {
-    res.write('This is the list of our students\n');
+    const responseHeader = 'This is the list of our students\n';
     countStudents(DB_FILE)
       .then((data) => {
-        res.end(data);
+        res.end(`${responseHeader}${data}`);
       })
       .catch((err) => {
-        res.end(err.message);
+        // تأكد من أن رسالة الخطأ تظهر تماماً كما هي مطلوبة بعد الهيدر
+        res.end(`${responseHeader}${err.message}`);
       });
-  } else {
-    res.statusCode = 404;
-    res.end('Not Found');
   }
 });
 
